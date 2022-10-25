@@ -42,32 +42,29 @@ func JwtValidator(issuerURL *url.URL,
 	customClaimsConstructor func(ginContext *gin.Context) func() validator.CustomClaims) (gin.HandlerFunc, error) {
 	provider := jwks.NewCachingProvider(issuerURL, time.Duration(5*time.Minute))
 
-	handlerFunction := func() gin.HandlerFunc {
-		return func(gctx *gin.Context) {
-			jwtValidator, err := validator.New(provider.KeyFunc,
-				validator.RS256,
-				issuerURL.String(),
-				audience,
-				validator.WithCustomClaims(customClaimsConstructor(gctx)))
-			if err != nil {
-				panic(err)
-			}
-			jwtMiddleware := jwtMiddleware.New(jwtValidator.ValidateToken)
-			var skip = true
-			var handler http.HandlerFunc = func(http.ResponseWriter, *http.Request) {
-				skip = false
-			}
+	handlerFunction := func(gctx *gin.Context) {
+		jwtValidator, err := validator.New(provider.KeyFunc,
+			validator.RS256,
+			issuerURL.String(),
+			audience,
+			validator.WithCustomClaims(customClaimsConstructor(gctx)))
+		if err != nil {
+			panic(err)
+		}
+		jwtMiddleware := jwtMiddleware.New(jwtValidator.ValidateToken)
+		var skip = true
+		var handler http.HandlerFunc = func(http.ResponseWriter, *http.Request) {
+			skip = false
+		}
 
-			jwtMiddleware.CheckJWT(handler).ServeHTTP(gctx.Writer, gctx.Request)
-			switch {
-			case skip:
-				gctx.Abort()
-			default:
-				gctx.Next()
-			}
-
+		jwtMiddleware.CheckJWT(handler).ServeHTTP(gctx.Writer, gctx.Request)
+		switch {
+		case skip:
+			gctx.Abort()
+		default:
+			gctx.Next()
 		}
 	}
-	return handlerFunction(), nil
+	return handlerFunction, nil
 
 }
