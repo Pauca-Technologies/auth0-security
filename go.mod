@@ -1,4 +1,4 @@
-module Pauca-Technologies/auth0-security
+module github.com/Pauca-Technologies/auth0-security
 
 go 1.19
 
