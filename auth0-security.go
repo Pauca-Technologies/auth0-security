@@ -21,7 +21,10 @@ type DefaultCustomClaims struct {
 }
 
 func (c *DefaultCustomClaims) Validate(ctx context.Context) error {
-	c.ginContext.Set("customClaims", *c)
+	c.ginContext.Set("user_role", c.UserRole)
+	c.ginContext.Set("role_in_organization", c.RoleInOrganization)
+	c.ginContext.Set("organization", c.Organization)
+	c.ginContext.Set("organization_id", c.OrganizationId)
 	return nil
 }
 
