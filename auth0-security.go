@@ -39,7 +39,7 @@ func DefaultCustomClaimsConstructor(ginContext *gin.Context) func() validator.Cu
 func JwtValidator(issuerURL *url.URL,
 	cacheTTL time.Duration,
 	audience []string,
-	customClaimsConstructor func(ginContext *gin.Context) func() validator.CustomClaims) (gin.HandlerFunc, error) {
+	customClaimsConstructor func(ginContext *gin.Context) func() validator.CustomClaims) gin.HandlerFunc {
 	provider := jwks.NewCachingProvider(issuerURL, cacheTTL)
 
 	handlerFunction := func(gctx *gin.Context) {
@@ -65,6 +65,6 @@ func JwtValidator(issuerURL *url.URL,
 			gctx.Next()
 		}
 	}
-	return handlerFunction, nil
+	return handlerFunction
 
 }
