@@ -40,7 +40,7 @@ func JwtValidator(issuerURL *url.URL,
 	cacheTTL time.Duration,
 	audience []string,
 	customClaimsConstructor func(ginContext *gin.Context) func() validator.CustomClaims) (gin.HandlerFunc, error) {
-	provider := jwks.NewCachingProvider(issuerURL, time.Duration(5*time.Minute))
+	provider := jwks.NewCachingProvider(issuerURL, cacheTTL)
 
 	handlerFunction := func(gctx *gin.Context) {
 		jwtValidator, err := validator.New(provider.KeyFunc,
