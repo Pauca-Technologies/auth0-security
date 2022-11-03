@@ -2,8 +2,10 @@ package auth0security
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
 	jwtMiddleware "github.com/auth0/go-jwt-middleware/v2"
@@ -36,10 +38,13 @@ func DefaultCustomClaimsConstructor(ginContext *gin.Context) func() validator.Cu
 	}
 }
 
+type CustomClaimsConstructor func(ginContext *gin.Context) func() validator.CustomClaims
+
 func JwtValidator(issuerURL *url.URL,
 	cacheTTL time.Duration,
 	audience []string,
-	customClaimsConstructor func(ginContext *gin.Context) func() validator.CustomClaims) gin.HandlerFunc {
+	customClaimsConstructor CustomClaimsConstructor,
+	opts ...interface{}) gin.HandlerFunc {
 	provider := jwks.NewCachingProvider(issuerURL, cacheTTL)
 
 	handlerFunction := func(gctx *gin.Context) {
@@ -60,7 +65,17 @@ func JwtValidator(issuerURL *url.URL,
 		jwtMiddleware.CheckJWT(handler).ServeHTTP(gctx.Writer, gctx.Request)
 		switch {
 		case skip:
-			gctx.Abort()
+			if os.Getenv("ENV") == "local" && len(opts) > 0 {
+				if fallbackClaimsValues, ok := opts[0].(map[string]string); ok {
+					log.Printf("Validation failed. Local environment. Fallback to default values: %v\n", fallbackClaimsValues)
+					for key, value := range fallbackClaimsValues {
+						gctx.Set(key, value)
+					}
+					gctx.Next()
+				}
+			} else {
+				gctx.Abort()
+			}
 		default:
 			gctx.Next()
 		}
